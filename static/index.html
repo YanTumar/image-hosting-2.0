@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Завантаження картинок</title>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <header>
+        <button id="upload-tab-btn" class="upload__tab--active">Upload</button>
+        <button id="images-tab-btn">Images</button>
+    </header>
+
+    <main>
+        <h2>Завантажте свій файл 📤</h2>
+
+        <!-- Зона Drag-and-Drop -->
+        <div class="upload__dropzone" style="border: 2px dashed #ccc; padding: 20px; text-align: center;">
+            <p>Перетягніть файл сюди або обиріть на комп'ютері</p>
+            <input type="file" id="file-upload" accept="image/*" multiple>
+        </div>
+
+        <!-- Поле для згенерованого посилання та кнопка копіювання -->
+        <div style="margin-top: 15px;">
+            <input type="text" class="upload__input" readonly placeholder="https://">
+            <button class="upload__copy">COPY</button>
+        </div>
+    </main>
+
+    <script src="upload.js"></script>
+</body>
+</html>

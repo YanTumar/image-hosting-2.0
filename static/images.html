@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Галерея зображень 🖼️</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .btn--active {
+            background: #008080;
+            color: #fff;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .gallery__item {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .gallery__img {
+            max-width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button id="upload-tab-btn" class="btn">Upload</button>
+        <button id="images-tab-btn" class="btn btn--active">Images</button>
+    </div>
+
+    <h1>Завантажені зображення 🖼️</h1>
+    <div id="gallery" class="gallery"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadBtn = document.getElementById('upload-tab-btn');
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', () => {
+                    window.location.href = 'index.html';
+                });
+            }
+
+            const galleryContainer = document.getElementById('gallery');
+
+            fetch('/images')
+                .then(response => response.json())
+                .then(files => {
+                    if (files.length === 0) {
+                        galleryContainer.innerHTML = '<p>Немає завантажених зображень.</p>';
+                        return;
+                    }
+
+                    files.forEach(filename => {
+                        const item = document.createElement('div');
+                        item.className = 'gallery__item';
+
+                        const img = document.createElement('img');
+                        img.src = `/images/${filename}`;
+                        img.alt = filename;
+                        img.className = 'gallery__img';
+
+                        const title = document.createElement('p');
+                        title.textContent = filename;
+
+                        item.appendChild(img);
+                        item.appendChild(title);
+                        galleryContainer.appendChild(item);
+                    });
+                })
+                .catch(error => {
+                    console.error('Помилка завантаження:', error);
+                    galleryContainer.innerHTML = '<p>Не вдалося завантажити галерею.</p>';
+                });
+        });
+    </script>
+</body>
+</html>

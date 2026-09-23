@@ -1,0 +1,6 @@
+.venv
+.git
+Dockerfile
+.dockerignore
+docker-compose.yml
+nginx.conf
