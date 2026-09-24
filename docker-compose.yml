@@ -6,8 +6,10 @@ services:
     volumes:
       - ./images:/app/images
       - ./logs:/app/logs
+      - .:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   nginx:
     image: nginx:1.25
@@ -30,6 +32,11 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d images_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
 
 volumes:
   db_data:

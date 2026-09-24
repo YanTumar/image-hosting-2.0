@@ -90,6 +90,35 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
                 with open(save_path, 'wb') as f:
                     f.write(file_data)
 
+                file_size = len(file_data)
+                try:
+                    conn = psycopg2.connect(
+                        dbname="images_db",
+                        user="postgres",
+                        password="password",
+                        host="db",
+                        port="5432"
+                    )
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO images (filename, original_name, size, file_type)
+                        VALUES (%s, %s, %s, %s);
+                    """, (unique_name, filename, file_size, ext))
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+                    logging.info(f"Успіх: метадані файлу {unique_name} збережено в БД.")
+                except Exception as e:
+                    logging.error(f"Помилка запису в БД: {e}")
+                    if os.path.exists(save_path):
+                        os.remove(save_path)
+
+                    self.send_response(500)
+                    self.send_header('Content-type', 'text/html; charset=utf-8')
+                    self.end_headers()
+                    self.wfile.write("<h1>Помилка 500</h1><p>Помилка збереження в базу даних.</p>".encode("utf-8"))
+                    return
+
                 logging.info(f"Успіх: зображення {unique_name} завантажено.")
 
                 self.send_response(200)
