@@ -40,6 +40,46 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(response_data.encode("utf-8"))
 
+
+        elif self.path == "/images-list":
+            try:
+                conn = psycopg2.connect(
+                    dbname="images_db",
+                    user="postgres",
+                    password="password",
+                    host="db",
+                    port="5432"
+                )
+
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, filename, original_name, size, upload_time, file_type FROM images;")
+                rows = cursor.fetchall()
+                images = []
+
+                for row in rows:
+                    images.append({
+                        "id": row[0],
+                        "filename": row[1],
+                        "original_name": row[2],
+                        "size": row[3],
+                        "upload_time": str(row[4]),
+                        "file_type": row[5]
+                    })
+
+                cursor.close()
+                conn.close()
+
+                response_data = json.dumps(images)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(response_data.encode("utf-8"))
+
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(f"Error: {e}".encode("utf-8"))
+
         else:
             self.send_response(404)
             self.send_header('Content-type', 'text/html; charset=utf-8')
