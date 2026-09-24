@@ -40,9 +40,16 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(response_data.encode("utf-8"))
 
-
-        elif self.path == "/images-list":
+        elif self.path.startswith("/images-list"):
             try:
+                page = 1
+                if "?page=" in self.path:
+                    try:
+                        page = int(self.path.split("?page=")[1])
+                    except ValueError:
+                        page = 1
+
+                offset = (page - 1) * 10
                 conn = psycopg2.connect(
                     dbname="images_db",
                     user="postgres",
@@ -52,7 +59,13 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
                 )
 
                 cursor = conn.cursor()
-                cursor.execute("SELECT id, filename, original_name, size, upload_time, file_type FROM images;")
+                cursor.execute(
+
+                    "SELECT id, filename, original_name, size, upload_time, file_type FROM images ORDER BY upload_time DESC LIMIT 10 OFFSET %s;",
+                    (offset,)
+
+                )
+
                 rows = cursor.fetchall()
                 images = []
 
@@ -61,15 +74,15 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
                         "id": row[0],
                         "filename": row[1],
                         "original_name": row[2],
-                        "size": row[3],
+                        "size": round((row[3] / 1024), 2),
                         "upload_time": str(row[4]),
                         "file_type": row[5]
                     })
 
                 cursor.close()
                 conn.close()
-
                 response_data = json.dumps(images)
+
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json; charset=utf-8')
                 self.end_headers()
@@ -174,6 +187,58 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write("<h1>Помилка 400</h1><p>Файл не знайдено в запиті.</p>".encode("utf-8"))
 
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_DELETE(self):
+        if self.path.startswith("/delete/"):
+            try:
+                image_id = int(self.path.split("/delete/")[1])
+
+                conn = psycopg2.connect(
+                    dbname="images_db",
+                    user="postgres",
+                    password="password",
+                    host="db",
+                    port="5432"
+                )
+                cursor = conn.cursor()
+                cursor.execute("SELECT filename FROM images WHERE id = %s;", (image_id,))
+                row = cursor.fetchone()
+
+                if not row:
+                    cursor.close()
+                    conn.close()
+                    self.send_response(404)
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Not found"}).encode("utf-8"))
+                    return
+
+                filename = row[0]
+
+                cursor.execute("DELETE FROM images WHERE id = %s;", (image_id,))
+                conn.commit()
+
+                cursor.close()
+                conn.close()
+
+                file_path = os.path.join('images', filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+                logging.info(f"Успіх: зображення {filename} (ID: {image_id}) видалено.")
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Успішно видалено"}).encode("utf-8"))
+
+            except Exception as e:
+                logging.error(f"Помилка видалення: {e}")
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(f"Error: {e}".encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()

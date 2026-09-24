@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Список зображень</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .btn-delete {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-delete:hover {
+            background-color: #cc0000;
+        }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn-page {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-page:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h2>📁 Список завантажених зображень</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Назва файлу</th>
+                <th>Оригінальна назва</th>
+                <th>Розмір (КБ)</th>
+                <th>Дата завантаження</th>
+                <th>Тип файлу</th>
+                <th>Дії</th>
+            </tr>
+        </thead>
+        <tbody id="images-tbody">
+            <!-- Сюди JS додаватиме рядки -->
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <button id="prev-btn" class="btn-page" onclick="changePage(-1)">Попередня сторінка</button>
+        <span id="page-num">Сторінка 1</span>
+        <button id="next-btn" class="btn-page" onclick="changePage(1)">Наступна сторінка</button>
+    </div>
+
+    <script>
+        var currentPage = 1;
+
+        function loadImages(page) {
+            fetch('/images-list?page=' + page)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    var tbody = document.getElementById('images-tbody');
+                    tbody.innerHTML = '';
+
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Немає завантажених зображень</td></tr>';
+                        document.getElementById('next-btn').disabled = true;
+                        return;
+                    }
+
+                    data.forEach(function(img) {
+                        var row = document.createElement('tr');
+
+                        var fileLink = '<a href="/images/' + img.filename + '" target="_blank">' + img.filename + '</a>';
+                        var deleteBtn = '<button class="btn-delete" onclick="deleteImage(' + img.id + ')">Видалити</button>';
+
+                        row.innerHTML =
+                            '<td>' + fileLink + '</td>' +
+                            '<td>' + img.original_name + '</td>' +
+                            '<td>' + img.size + '</td>' +
+                            '<td>' + img.upload_time + '</td>' +
+                            '<td>' + img.file_type + '</td>' +
+                            '<td>' + deleteBtn + '</td>';
+
+                        tbody.appendChild(row);
+                    });
+
+                    document.getElementById('next-btn').disabled = data.length < 10;
+                    document.getElementById('prev-btn').disabled = currentPage === 1;
+                    document.getElementById('page-num').innerText = 'Сторінка ' + currentPage;
+                })
+                .catch(function(error) {
+                    console.error('Помилка завантаження:', error);
+                });
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            loadImages(currentPage);
+        }
+
+        function deleteImage(id) {
+            if (confirm('Ви дійсно хочете видалити це зображення?')) {
+                fetch('/delete/' + id, { method: 'DELETE' })
+                    .then(function(response) {
+                        if (response.ok) {
+                            loadImages(currentPage);
+                        } else {
+                            alert('Помилка під час видалення');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Помилка видалення:', error);
+                    });
+            }
+        }
+
+        loadImages(currentPage);
+    </script>
+</body>
+</html>
