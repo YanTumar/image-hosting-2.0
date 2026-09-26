@@ -90,10 +90,16 @@
                     tbody.innerHTML = '';
 
                     if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Немає завантажених зображень</td></tr>';
-                        document.getElementById('next-btn').disabled = true;
-                        return;
-                    }
+                        if (currentPage > 1) {
+                            currentPage--;
+                            loadImages(currentPage);
+                            return;
+                        }
+
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Немає завантажених зображень</td></tr>';
+                    document.getElementById('next-btn').disabled = true;
+                    return;
+                }
 
                     data.forEach(function(img) {
                         var row = document.createElement('tr');

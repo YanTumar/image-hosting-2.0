@@ -23,6 +23,7 @@ services:
       - app
 
   db:
+    container_name: image-hosting-20-db-1
     image: postgres:15
     environment:
       POSTGRES_DB: images_db
